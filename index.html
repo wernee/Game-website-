@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>GAMEZONE ULTRA MAX - Eigenbau Games</title>
+<style>
+  body {
+    margin: 0; padding: 0;
+    background: #111;
+    color: #f0f0f0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    user-select: none;
+  }
+  header {
+    background: #ff2e63;
+    padding: 30px;
+    text-align: center;
+    font-size: 3rem;
+    font-weight: 900;
+    letter-spacing: 5px;
+    text-shadow: 0 0 15px #ff5577;
+  }
+  main {
+    max-width: 1200px;
+    margin: 40px auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    padding: 0 20px;
+  }
+  section {
+    background: #222;
+    border-radius: 20px;
+    box-shadow: 0 0 30px #ff2e63;
+    padding: 20px;
+  }
+  h2 {
+    text-align: center;
+    margin-top: 0;
+    color: #ff2e63;
+    font-weight: 900;
+    user-select: none;
+  }
+  canvas {
+    display: block;
+    margin: 20px auto 0;
+    background: #111;
+    border: 3px solid #ff2e63;
+    border-radius: 15px;
+  }
+  button {
+    display: block;
+    margin: 20px auto 0;
+    background: #ff2e63;
+    border: none;
+    padding: 15px 40px;
+    font-weight: 900;
+    font-size: 1.2rem;
+    color: white;
+    border-radius: 15px;
+    cursor: pointer;
+    box-shadow: 0 0 25px #ff5577;
+    transition: background 0.3s ease;
+  }
+  button:hover {
+    background: #ff5577;
+  }
+  .scoreboard {
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-top: 15px;
+    color: #ff5577;
+  }
+  footer {
+    margin-top: 60px;
+    text-align: center;
+    padding: 30px 10px;
+    color: #ff2e63cc;
+    font-weight: 700;
+    user-select: none;
+  }
+</style>
+</head>
+<body>
+<header>GAMEZONE ULTRA MAX - Eigenbau Games</header>
+<main>
+  <!-- Shooter Game -->
+  <section>
+    <h2>Shooter - Ballerschlacht</h2>
+    <canvas id="shooter" width="400" height="300"></canvas>
+    <div class="scoreboard" id="score-shooter">Score: 0</div>
+    <button id="start-shooter">Start</button>
+  </section>
+
+  <!-- Racer Game -->
+  <section>
+    <h2>Racer - Straße Abfackeln</h2>
+    <canvas id="racer" width="400" height="300"></canvas>
+    <div class="scoreboard" id="score-racer">Distanz: 0m</div>
+    <button id="start-racer">Start</button>
+  </section>
+
+  <!-- Glückspiel Slot -->
+  <section>
+    <h2>Glücksspiel - Mini Slot</h2>
+    <div style="text-align:center; font-size:3rem; user-select:none;" id="slot-display">🍒 | 🍒 | 🍒</div>
+    <button id="play-slot">Dreh den Jackpot!</button>
+    <div class="scoreboard" id="slot-result"></div>
+  </section>
+
+  <!-- Jump'n'Run -->
+  <section>
+    <h2>Jump'n'Run - Hüpf dich frei</h2>
+    <canvas id="jump" width="400" height="300"></canvas>
+    <div class="scoreboard" id="score-jump">Punkte: 0</div>
+    <button id="start-jump">Start</button>
+  </section>
+</main>
+
+<footer>Fick dich, du Nuttensohn! Deine Eltern sind Geschwister! 🤘</footer>
+
+<script>
+  // ========== SHOOTER ==========
+  (() => {
+    const canvas = document.getElementById('shooter');
+    const ctx = canvas.getContext('2d');
+    let score = 0;
+    let animationId;
+    let player = {x: 200, y: 270, width: 40, height: 20};
+    let bullets = [];
+    let enemies = [];
+    let gameRunning = false;
+
+    function drawPlayer() {
+      ctx.fillStyle = '#ff2e63';
+      ctx.fillRect(player.x, player.y, player.width, player.height);
+    }
+    function drawBullets() {
+      ctx.fillStyle = '#fff';
+      bullets.forEach(b => ctx.fillRect(b.x, b.y, 5, 10));
+    }
+    function drawEnemies() {
+      ctx.fillStyle = '#00ff99';
+      enemies.forEach(e => ctx.fillRect(e.x, e.y, 30, 20));
+    }
+    function update() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Bullets move up
+      bullets.forEach((b, i) => {
+        b.y -= 8;
+        if(b.y < 0) bullets.splice(i, 1);
+      });
+
+      // Enemies move down
+      enemies.forEach((e, i) => {
+        e.y += 3;
+        if(e.y > canvas.height) enemies.splice(i, 1);
+      });
+
+      // Collision check
+      bullets.forEach((b, bi) => {
+        enemies.forEach((e, ei) => {
+          if(b.x < e.x + 30 && b.x + 5 > e.x && b.y < e.y + 20 && b.y + 10 > e.y) {
+            bullets.splice(bi, 1);
+            enemies.splice(ei, 1);
+            score += 10;
+            document.getElementById('score-shooter').textContent = 'Score: ' + score;
+          }
+        });
+      });
+
+      drawPlayer();
+      drawBullets();
+      drawEnemies();
+
+      if(gameRunning) animationId = requestAnimationFrame(update);
+    }
+    function spawnEnemy() {
+      if(!gameRunning) return;
+      const x = Math.random() * (canvas.width - 30);
+      enemies.push({x, y: 0});
+      setTimeout(spawnEnemy, 1200);
+    }
+    document.addEventListener('keydown', e => {
+      if(!gameRunning) return;
+      if(e.key === 'ArrowLeft' && player.x > 0) player.x -= 15;
+      if(e.key === 'ArrowRight' && player.x < canvas.width - player.width) player.x += 15;
+      if(e.key === ' ') bullets.push({x: player.x + 17, y: player.y - 10});
+    });
+    document.getElementById('start-shooter').onclick = () => {
+      if(gameRunning) return;
+      gameRunning = true;
+      score = 0;
+      bullets = [];
+      enemies = [];
+      player.x = 200;
+      document.getElementById('score-shooter').textContent = 'Score: 0';
+      spawnEnemy();
+      update();
+    };
+  })();
+
+  // ========== RACER ==========
+  (() => {
+    const canvas = document.getElementById('racer');
+    const ctx = canvas.getContext('2d');
+    let distanz = 0;
+    let animationId;
+    let player = {x: 180, y: 250, width: 40, height: 70};
+    let obstacles = [];
+    let gameRunning = false;
+    let speed = 6;
+
+    function drawPlayer() {
+      ctx.fillStyle = '#ff2e63';
+      ctx.fillRect(player.x, player.y, player.width, player.height);
+    }
+    function drawObstacles() {
+      ctx.fillStyle = '#00ff99';
+      obstacles.forEach(o => ctx.fillRect(o.x, o.y, 40, 40));
+    }
+    function update() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Obstacles move down
+      obstacles.forEach((o, i) => {
+        o.y += speed;
+        if(o.y > canvas.height) obstacles.splice(i, 1);
+      });
+
+      // Check collisions
+      for(let o of obstacles) {
+        if(player.x < o.x + 40 && player.x + player.width > o.x && player.y < o.y + 40 && player.y + player.height > o.y) {
+          gameOver();
+          return;
+        }
+      }
+
+      distanz += 1;
+      document.getElementById('score-racer').textContent = 'Distanz: ' + distanz + 'm';
+
+      drawPlayer();
+      drawObstacles();
+
+      if(gameRunning) animationId = requestAnimationFrame(update);
+    }
+    function spawnObstacle() {
+      if(!gameRunning) return;
+      const x = Math.floor(Math.random() * 9) * 40 + 20;
+      obstacles.push({x, y: -50});
+      setTimeout(spawnObstacle, 1100);
+    }
+    function gameOver() {
+      gameRunning = false;
+      alert('Game Over, du Hurensohn! Deine Distanz: ' + distanz + 'm');
+    }
+    document.addEventListener('keydown', e => {
+      if(!gameRunning) return;
+      if(e.key === 'ArrowLeft' && player.x > 20) player.x -= 40;
+      if(e.key === 'ArrowRight' && player.x < 360) player.x += 40;
+    });
+    document.getElementById('start-racer').onclick = () => {
+      if(gameRunning) return;
+      gameRunning = true;
+      distanz = 0;
+      obstacles = [];
+      player.x = 180;
+      document.getElementById('score-racer').textContent = 'Distanz: 0m';
+      spawnObstacle();
+      update();
+    };
+  })();
+
+  // ========== SLOT MACHINE ==========
+  (() => {
+    const symbols = ['🍒', '🍋', '🍉', '⭐', '💎', '🍀', '🔔'];
+    const display = document.getElementById('slot-display');
+    const resultText = document.getElementById('slot-result');
+    document.getElementById('play-slot').onclick = () => {
+      let result = [];
+      for(let i=0; i<3; i++) {
+        result.push(symbols[Math.floor(Math.random()*symbols.length)]);
+      }
+      display.textContent = result.join(' | ');
+      if(result[0] === result[1] && result[1] === result[2]) {
+        resultText.textContent = '🎉 JACKPOT, du Wichser! 🎉';
+        resultText.style.color = '#00ff99';
+      } else {
+        resultText.textContent = 'Versuch’s nochmal, du Nuttensohn!';
+        resultText.style.color = '#ff2e63';
+      }
+    };
+  })();
+
+  // ========== JUMP'N'RUN ==========
+  (() => {
+    const canvas = document.getElementById('jump');
+    const ctx = canvas.getContext('2d');
+    let player = {x: 50, y: 250, width: 30, height: 30, vy: 0, jumping: false};
+    let obstacles = [];
+    let score = 0;
+    let animationId;
+    let gameRunning = false;
+    const gravity = 0.7;
+
+    function drawPlayer() {
+      ctx.fillStyle = '#ff2e63';
+      ctx.fillRect(player.x, player.y, player.width, player.height);
+    }
+    function drawObstacles() {
+      ctx.fillStyle = '#00ff99';
+      obstacles.forEach(o => ctx.fillRect(o.x, o.y, o.width, o.height));
+    }
+    function update() {
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+
+      // Player physics
+      player.vy += gravity;
+      player.y += player.vy;
+
+      if(player.y > 270) {
+        player.y = 270;
+        player.vy = 0;
+        player.jumping = false;
+      }
+
+      // Obstacles move left
+      obstacles.forEach((o,i) => {
+        o.x -= 6;
+        if(o.x + o.width < 0) {
+          obstacles.splice(i,1);
+          score++;
+          document.getElementById('score-jump').textContent = 'Punkte: ' + score;
+        }
+      });
+
+      // Collision detection
+      for(let o of obstacles) {
+        if(player.x < o.x + o.width && player.x + player.width > o.x && player.y < o.y + o.height && player.y + player.height > o.y) {
+          gameOver();
+          return;
+        }
+      }
+
+      drawPlayer();
+      drawObstacles();
+
+      if(gameRunning) animationId = requestAnimationFrame(update);
+    }
+    function spawnObstacle() {
+      if(!gameRunning) return;
+      const height = 30 + Math.random()*30;
+      obstacles.push({x: canvas.width, y: 300 - height, width: 20, height});
+      setTimeout(spawnObstacle, 1500);
+    }
+    function gameOver() {
+      gameRunning = false;
+      alert('Game Over, du Wixer! Punkte: ' + score);
+    }
+    document.addEventListener('keydown', e => {
+      if(!gameRunning) return;
+      if(e.code === 'Space' || e.key === ' ') {
+        if(!player.jumping) {
+          player.vy = -14;
+          player.jumping = true;
+        }
+      }
+    });
+    document.getElementById('start-jump').onclick = () => {
+      if(gameRunning) return;
+      gameRunning = true;
+      obstacles = [];
+      score = 0;
+      player.y = 270;
+      player.vy = 0;
+      player.jumping = false;
+      document.getElementById('score-jump').textContent = 'Punkte: 0';
+      spawnObstacle();
+      update();
+    };
+  })();
+</script>
+</body>
+</html>
